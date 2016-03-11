@@ -1,7 +1,12 @@
 package com.zendesk.maxwell.schema.columndef;
 
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.apache.avro.JsonProperties;
+import org.apache.avro.Schema;
+import org.apache.avro.SchemaBuilder;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang.StringEscapeUtils;
@@ -13,9 +18,15 @@ import org.slf4j.LoggerFactory;
 
 public class StringColumnDef extends ColumnDef {
 	static final Logger LOGGER = LoggerFactory.getLogger(StringColumnDef.class);
+
+	private final Schema.Field fieldSchema;
+
 	public StringColumnDef(String tableName, String name, String type, int pos, String encoding) {
 		super(tableName, name, type, pos);
 		this.encoding = encoding;
+
+		Schema union = SchemaBuilder.unionOf().nullType().and().stringType().endUnion();
+		fieldSchema = new Schema.Field(avroSanitize(name), union, null, JsonProperties.NULL_VALUE);
 	}
 
 	public void setDefaultEncoding(String e) {
@@ -60,7 +71,7 @@ public class StringColumnDef extends ColumnDef {
 		}
 	}
 	@Override
-	public Object asJSON(Object value) {
+	public Object jsonValue(Object value) {
 
 		if ( value instanceof String ) {
 			return value;
@@ -79,5 +90,15 @@ public class StringColumnDef extends ColumnDef {
 		escaped = escaped.replaceAll("\n", "\\\\n");
 		escaped = escaped.replaceAll("\r", "\\\\r");
 		return "'" + escaped + "'";
+	}
+
+	@Override
+	public Schema.Field buildAvroField() {
+		return fieldSchema;
+	}
+
+	@Override
+	public Object avroValue(Object value) {
+		return asJSON(value);
 	}
 }

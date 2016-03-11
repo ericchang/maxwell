@@ -1,0 +1,17 @@
+CREATE DATABASE `cdb`
+create table `cdb`.`ca` ( id int(11) auto_increment not null primary key, datecol datetime NOT NULL default 0, ch varchar(255));
+insert into cdb.ca set ch='a';
+-> {"schema": "{{{schema_ca}}}",
+->  "database": {"string": "cdb"}, "table": {"string": "ca"}, "type": {"string": "insert"},
+->  "data": {"maxwell.test.columns": { "id": { "long": 1 }, "ch": { "string": "a" }, "datecol": {"long": -62167219200000}}},
+->  "old": null
+-> }
+
+insert into cdb.ca set ch='a', datecol = '0003-00-00 00:00:01';
+
+-> {"schema": "{{{schema_ca}}}",
+->  "database": {"string": "cdb"}, "table": {"string": "ca"}, "type": {"string": "insert"},
+->  "data": {"maxwell.test.columns": { "id": { "long": 2 }, "ch": { "string": "a" }, "datecol": {"long": -62072524799000}}},
+->  "old": null
+-> }
+

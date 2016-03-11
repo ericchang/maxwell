@@ -1,0 +1,21 @@
+CREATE DATABASE `test_db_create_select`
+use test_db_create_select
+CREATE TABLE `test_alike` ( id int(11), flt float )
+
+insert into test_alike set id = 1, flt = 0.5;
+
+->  {"database": {"string": "test_db_create_select"}, "table": {"string": "test_alike"}, "type": {"string": "insert"},
+->   "data": {"maxwell.test.columns": {"id": {"long": 1}, "flt": {"double": 0.5}}},
+->   "old": null,
+->   "schema": "{{{schema_test_alike}}}"
+->  }
+
+CREATE TABLE `test_db_create_select`.`test_alike2` select * from test_alike;
+
+->  {"database": {"string": "test_db_create_select"}, "table": {"string": "test_alike2"}, "type": {"string": "insert"},
+->   "data": {"maxwell.test.columns": {"id": {"long": 1}, "flt": {"double": 0.5}}},
+->   "old": null,
+->   "schema": "{{{schema_test_alike2}}}"
+->  }
+
+

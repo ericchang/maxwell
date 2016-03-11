@@ -1,0 +1,73 @@
+create database bit_db;
+use bit_db;
+create table test_bit(id int(10) unsigned not null auto_increment primary key, bit_field bit(64));
+
+insert into test_bit set bit_field=b'00011';
+
+->  {"schema": "{{{schema_test_bit}}}",
+->   "database": {"string": "bit_db"}, "table": {"string": "test_bit"}, "type": {"string": "insert"},
+->   "data": {"maxwell.test.columns": {"id": {"long": 1}, "bit_field": {"bytes": "{{{testbit_00011}}}"}}},
+->   "old": null
+->  }
+
+insert into test_bit set bit_field=b'111111';
+
+->  {"schema": "{{{schema_test_bit}}}",
+->   "database": {"string": "bit_db"}, "table": {"string": "test_bit"}, "type": {"string": "insert"},
+->   "data": {"maxwell.test.columns": {"id": {"long": 2}, "bit_field": {"bytes": "{{{testbit_111111}}}"}}},
+->   "old": null
+->  }
+
+insert into test_bit set bit_field=409832983;
+
+->  {"schema": "{{{schema_test_bit}}}",
+->   "database": {"string": "bit_db"}, "table": {"string": "test_bit"}, "type": {"string": "insert"},
+->   "data": {"maxwell.test.columns": {"id": {"long": 3}, "bit_field": {"bytes": "{{{testbit_409832983}}}"}}},
+->   "old": null
+->  }
+
+insert into test_bit set bit_field=18446744073709551615;
+
+->  {"schema": "{{{schema_test_bit}}}",
+->   "database": {"string": "bit_db"}, "table": {"string": "test_bit"}, "type": {"string": "insert"},
+->   "data": {"maxwell.test.columns": {"id": {"long": 4}, "bit_field": {"bytes": "{{{testbit_18446744073709551615}}}"}}},
+->   "old": null
+->  }
+
+insert into test_bit set bit_field=5461;
+
+->  {"schema": "{{{schema_test_bit}}}",
+->   "database": {"string": "bit_db"}, "table": {"string": "test_bit"}, "type": {"string": "insert"},
+->   "data": {"maxwell.test.columns": {"id": {"long": 5}, "bit_field": {"bytes": "{{{testbit_5461}}}"}}},
+->   "old": null
+->  }
+
+create table test_bit2 (id int(10) unsigned not null auto_increment primary key, bit_field bit(8));
+
+insert into test_bit2 set bit_field=b'00011';
+
+->  {"schema": "{{{schema_test_bit2}}}",
+->   "database": {"string": "bit_db"}, "table": {"string": "test_bit2"}, "type": {"string": "insert"},
+->   "data": {"maxwell.test.columns": {"id": {"long": 1}, "bit_field": {"bytes": "{{{testbit2_00011}}}"}}},
+->   "old": null
+->  }
+
+create table test_bit3 (id int(10) unsigned not null auto_increment primary key, bit_field bit(16));
+
+insert into test_bit3 set bit_field=13929;
+
+->  {"schema": "{{{schema_test_bit3}}}",
+->   "database": {"string": "bit_db"}, "table": {"string": "test_bit3"}, "type": {"string": "insert"},
+->   "data": {"maxwell.test.columns": {"id": {"long": 1}, "bit_field": {"bytes": "{{{testbit3_13929}}}"}}},
+->   "old": null
+->  }
+
+create table test_bit4 (id int(10) unsigned not null auto_increment primary key, bit_field bit(24));
+
+insert into test_bit4 set bit_field=b'111000111000111001010110';
+
+->  {"schema": "{{{schema_test_bit4}}}",
+->   "database": {"string": "bit_db"}, "table": {"string": "test_bit4"}, "type": {"string": "insert"},
+->   "data": {"maxwell.test.columns": {"id": {"long": 1}, "bit_field": {"bytes": "{{{testbit4_111000111000111001010110}}}"}}},
+->   "old": null
+->  }

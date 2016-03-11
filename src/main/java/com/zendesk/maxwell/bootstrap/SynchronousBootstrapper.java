@@ -220,7 +220,7 @@ public class SynchronousBootstrapper extends AbstractBootstrapper {
 			Object columnValue = resultSet.getObject(columnIndex);
 
 			if ( columnValue != null )
-				row.putData(columnDefinition.getName(), columnDefinition.asJSON(columnValue));
+				row.putData(columnDefinition.getName(), columnDefinition, columnValue);
 
 			++columnIndex;
 		}

@@ -1,25 +1,20 @@
 package com.zendesk.maxwell.schema;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.*;
-
+import com.zendesk.maxwell.BinlogPosition;
 import com.zendesk.maxwell.CaseSensitivity;
 import com.zendesk.maxwell.MaxwellContext;
+import com.zendesk.maxwell.schema.columndef.ColumnDef;
+import com.zendesk.maxwell.schema.ddl.SchemaSyncError;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.zendesk.maxwell.BinlogPosition;
-import com.zendesk.maxwell.schema.columndef.ColumnDef;
-import com.zendesk.maxwell.schema.ddl.SchemaSyncError;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.sql.*;
+import java.util.*;
 
 public class SchemaStore {
 	private static int maxSchemas = 5;
@@ -56,8 +51,8 @@ public class SchemaStore {
 				.prepareStatement(
 						"INSERT INTO `tables` SET schema_id = ?, database_id = ?, name = ?, encoding=?, pk=?",
 						Statement.RETURN_GENERATED_KEYS);
-		this.columnInsertSQL = "INSERT INTO `columns` (schema_id, table_id, name, encoding, coltype, is_signed, enum_values) "
-				+ " VALUES (?, ?, ?, ?, ?, ?, ?)";
+		this.columnInsertSQL = "INSERT INTO `columns` (schema_id, table_id, name, encoding, coltype, is_signed, enum_values, d_precision, d_scale) "
+				+ " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 	}
 
 	public SchemaStore(Connection connection, Long serverID, Schema schema, BinlogPosition position, String dbName) throws SQLException {
@@ -139,6 +134,8 @@ public class SchemaStore {
 					columnData.add(c.getType());
 					columnData.add(c.getSigned() ? 1 : 0);
 					columnData.add(enumValuesSQL);
+					columnData.add(c.getPrecision());
+					columnData.add(c.getScale());
 				}
 
 				if ( columnData.size() > 1000 )
@@ -155,8 +152,8 @@ public class SchemaStore {
 	private void executeColumnInsert(ArrayList<Object> columnData) throws SQLException {
 		String insertColumnSQL = this.columnInsertSQL;
 
-		for (int i=1; i < columnData.size() / 7; i++) {
-			insertColumnSQL = insertColumnSQL + ", (?, ?, ?, ?, ?, ?, ?)";
+		for (int i=1; i < columnData.size() / 9; i++) {
+			insertColumnSQL = insertColumnSQL + ", (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 		}
 
 		PreparedStatement columnInsert = connection.prepareStatement(insertColumnSQL);
@@ -173,6 +170,8 @@ public class SchemaStore {
 		if ( !SchemaStore.storeDatabaseExists(connection, schemaDatabaseName) ) {
 			SchemaStore.createStoreDatabase(connection, schemaDatabaseName);
 		}
+		connection.setCatalog(schemaDatabaseName);
+		upgradeSchemaStoreSchema(connection, schemaDatabaseName);
 	}
 
 	private static boolean storeDatabaseExists(Connection connection, String schemaDatabaseName) throws SQLException {
@@ -295,9 +294,18 @@ public class SchemaStore {
 			if ( cRS.getString("enum_values") != null )
 				enumValues = StringUtils.splitByWholeSeparatorPreserveAllTokens(cRS.getString("enum_values"), ",");
 
+			Integer precision = cRS.getInt("d_precision");
+			if ( cRS.wasNull() ) {
+				precision = null;
+			}
+			Integer scale = cRS.getInt("d_scale");
+			if ( cRS.wasNull() ) {
+				scale = null;
+			}
+
 			ColumnDef c = ColumnDef.build(t.getName(),
 					cRS.getString("name"), cRS.getString("encoding"),
-					cRS.getString("coltype"), i++,
+					cRS.getString("coltype"), precision, scale, i++,
 					cRS.getInt("is_signed") == 1,
 					enumValues);
 			t.addColumn(c);
@@ -430,7 +438,7 @@ public class SchemaStore {
 		c.createStatement().execute(sql);
 	}
 
-	public static void upgradeSchemaStoreSchema(Connection c, String schemaDatabaseName) throws SQLException, IOException {
+	private static void upgradeSchemaStoreSchema(Connection c, String schemaDatabaseName) throws SQLException, IOException {
 		if ( !getTableColumns("schemas", c).containsKey("deleted") ) {
 			performAlter(c, "alter table `schemas` add column deleted tinyint(1) not null default 0");
 		}
@@ -444,6 +452,16 @@ public class SchemaStore {
 		if ( !getTableColumns("bootstrap", c).containsKey("total_rows") ) {
 			performAlter(c, "alter table `bootstrap` add column total_rows bigint unsigned not null default 0 after inserted_rows");
 			performAlter(c, "alter table `bootstrap` modify column inserted_rows bigint unsigned not null default 0");
+		}
+
+		if ( !getTableColumns("columns", c).containsKey("d_precision") ) {
+			LOGGER.info("adding `d_precision` to `" + schemaDatabaseName + "`.`columns`");
+			performAlter(c, "alter table `columns` add column d_precision tinyint(2)");
+		}
+
+		if ( !getTableColumns("columns", c).containsKey("d_scale") ) {
+			LOGGER.info("adding `d_scale` to `" + schemaDatabaseName + "`.`columns`");
+			performAlter(c, "alter table `columns` add column `d_scale` tinyint(2)");
 		}
 	}
 

@@ -5,26 +5,30 @@ import com.google.code.or.common.glossary.column.DatetimeColumn;
 import com.zendesk.maxwell.schema.columndef.ColumnDef;
 
 public class ColumnWithDefinition {
-	public Column column;
-	public ColumnDef definition;
+	private Column column;
+	private ColumnDef definition;
 
 	public ColumnWithDefinition(Column column, ColumnDef definition) {
 		this.column = column;
 		this.definition = definition;
 	}
 
-	private Object valueForJSON() {
+	private Object mappedValue() {
 		if (column instanceof DatetimeColumn)
 			return ((DatetimeColumn) column).getLongValue();
 		return column.getValue();
 	}
 
-	public Object asJSON() {
-		Object value = valueForJSON();
-		if ( value == null )
-			return null;
+	public Object getValue() {
+		return mappedValue();
+	}
 
-		return definition.asJSON(value);
+	public String getName() {
+		return definition.getName();
+	}
+
+	public ColumnDef getDefinition() {
+		return definition;
 	}
 }
 

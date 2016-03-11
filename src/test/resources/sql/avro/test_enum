@@ -1,0 +1,28 @@
+create database enum_db;
+use enum_db;
+create table test_enums(id int(10) unsigned not null auto_increment primary key, enum_field enum('foo', 'bar', 'baz'));
+
+insert into test_enums set enum_field='bar';
+
+->  {"database": {"string": "enum_db"}, "table": {"string": "test_enums"}, "type": {"string": "insert"},
+->   "data": {"maxwell.test.columns": {"id": {"long": 1}, "enum_field": {"string": "bar"}}},
+->   "old": null,
+->   "schema": "{{{schema_test_enums}}}"
+->  }
+
+insert into test_enums set enum_field='baz';
+
+->  {"database": {"string": "enum_db"}, "table": {"string": "test_enums"}, "type": {"string": "insert"},
+->   "data": {"maxwell.test.columns": {"id": {"long": 2}, "enum_field": {"string": "baz"}}},
+->   "old": null,
+->   "schema": "{{{schema_test_enums}}}"
+->  }
+
+insert into test_enums set enum_field='foo';
+
+->  {"database": {"string": "enum_db"}, "table": {"string": "test_enums"}, "type": {"string": "insert"},
+->   "data": {"maxwell.test.columns": {"id": {"long": 3}, "enum_field": {"string": "foo"}}},
+->   "old": null,
+->   "schema": "{{{schema_test_enums}}}"
+->  }
+

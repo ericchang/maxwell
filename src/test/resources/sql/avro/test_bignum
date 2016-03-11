@@ -1,0 +1,11 @@
+create database long_db;
+use long_db;
+create table test_long(id int(10) unsigned not null auto_increment primary key, long_field BIGINT(20) UNSIGNED);
+
+insert into test_long set long_field=18446744073709551615;
+
+->  {"schema": "{{{schema_test_long_db}}}",
+->   "database": {"string": "long_db"}, "table": {"string": "test_long"}, "type": {"string": "insert"},
+->   "data": {"maxwell.test.columns": {"id": {"long": 1}, "long_field": {"bytes": "{{{long_field_bytes}}}"}}},
+->   "old": null
+->  }

@@ -1,17 +1,17 @@
 package com.zendesk.maxwell;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.*;
-
-import joptsimple.*;
-
+import com.zendesk.maxwell.schema.SchemaStore;
+import com.zendesk.maxwell.util.AbstractConfig;
+import joptsimple.BuiltinHelpFormatter;
+import joptsimple.OptionDescriptor;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.zendesk.maxwell.util.AbstractConfig;
-import com.zendesk.maxwell.schema.SchemaStore;
+import java.util.Enumeration;
+import java.util.Map;
+import java.util.Properties;
 
 public class MaxwellConfig extends AbstractConfig {
 	static final Logger LOGGER = LoggerFactory.getLogger(MaxwellConfig.class);
@@ -27,6 +27,7 @@ public class MaxwellConfig extends AbstractConfig {
 	public final Properties kafkaProperties;
 	public String kafkaTopic;
 	public String producerType;
+	public String format;
 	public String kafkaPartitionHash;
 	public String kafkaPartitionKey;
 	public String bootstrapperType;
@@ -74,6 +75,7 @@ public class MaxwellConfig extends AbstractConfig {
 		parser.accepts( "__separator_3" );
 
 		parser.accepts( "producer", "producer type: stdout|file|kafka" ).withRequiredArg();
+		parser.accepts( "format", "format: json|avro-json.  default: json" ).withOptionalArg();
 		parser.accepts( "output_file", "output file for 'file' producer" ).withRequiredArg();
 		parser.accepts( "kafka.bootstrap.servers", "at least one kafka server, formatted as HOST:PORT[,HOST:PORT]" ).withRequiredArg();
 		parser.accepts( "kafka_partition_by", "database|table|primary_key, kafka producer assigns partition by hashing the specified parameter").withRequiredArg();
@@ -150,6 +152,8 @@ public class MaxwellConfig extends AbstractConfig {
 
 		if ( options.has("producer"))
 			this.producerType = (String) options.valueOf("producer");
+		if ( options.has("format"))
+			this.format = (String) options.valueOf("format");
 		if ( options.has("bootstrapper"))
 			this.bootstrapperType = (String) options.valueOf("bootstrapper");
 		if ( options.has("bootstrapper_fetch_size"))
@@ -335,6 +339,10 @@ public class MaxwellConfig extends AbstractConfig {
 
 		if ( this.maxSchemas != null )
 			SchemaStore.setMaxSchemas(this.maxSchemas);
+
+		if ( this.format == null ) {
+			this.format = "json";
+		}
 	}
 
 	public Properties getKafkaProperties() {

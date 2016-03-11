@@ -1,5 +1,12 @@
 package com.zendesk.maxwell.schema;
 
+import com.zendesk.maxwell.CaseSensitivity;
+import com.zendesk.maxwell.schema.columndef.ColumnDef;
+import com.zendesk.maxwell.schema.ddl.SchemaSyncError;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -9,14 +16,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import com.zendesk.maxwell.CaseSensitivity;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.zendesk.maxwell.schema.columndef.ColumnDef;
-import com.zendesk.maxwell.schema.ddl.SchemaSyncError;
 
 public class SchemaCapturer {
 	private final Connection connection;
@@ -30,9 +29,9 @@ public class SchemaCapturer {
 
 	private final PreparedStatement infoSchemaStmt;
 	private final String INFORMATION_SCHEMA_SQL =
-			"SELECT * FROM `information_schema`.`COLUMNS` WHERE `TABLE_SCHEMA` = ? AND `TABLE_NAME` = ?";
+			"SELECT * FROM `information_schema`.`COLUMNS` WHERE `TABLE_SCHEMA` = ? AND `TABLE_NAME` = ? ORDER BY `ORDINAL_POSITION`";
 	private final CaseSensitivity sensitivity;
-
+	
 	public SchemaCapturer(Connection c, CaseSensitivity sensitivity) throws SQLException {
 		this.includeDatabases = new HashSet<>();
 		this.connection = c;
@@ -111,6 +110,8 @@ public class SchemaCapturer {
 			String colEnc     = r.getString("CHARACTER_SET_NAME");
 			int colPos        = r.getInt("ORDINAL_POSITION") - 1;
 			boolean colSigned = !r.getString("COLUMN_TYPE").matches(" unsigned$");
+			Integer precision = null;
+			Integer scale = null;
 
 			if ( r.getString("COLUMN_KEY").equals("PRI") )
 				t.pkIndex = i;
@@ -121,7 +122,15 @@ public class SchemaCapturer {
 				enumValues = extractEnumValues(expandedType);
 			}
 
-			t.addColumn(ColumnDef.build(t.getName(), colName, colEnc, colType, colPos, colSigned, enumValues));
+			if ( colType.equals("decimal") || colType.equals("numeric") ) {
+				String expandedType = r.getString("COLUMN_TYPE");
+
+				int[] precisionAndScale = extractPrecisionAndScale(expandedType);
+				precision = precisionAndScale[0];
+				scale = precisionAndScale[1];
+			}
+
+			t.addColumn(ColumnDef.build(t.getName(), colName, colEnc, colType, precision, scale, colPos, colSigned, enumValues));
 			i++;
 		}
 		captureTablePK(t);
@@ -155,5 +164,12 @@ public class SchemaCapturer {
 			enumValues[j] = enumValues[j].substring(1, enumValues[j].length() - 1);
 		}
 		return enumValues;
+	}
+
+	private static int[] extractPrecisionAndScale(String expandedType) {
+		Matcher matcher = Pattern.compile("([a-z]+)\\(([0-9]*),([0-9]*)\\)").matcher(expandedType);
+		matcher.matches();
+
+		return new int[] { Integer.valueOf(matcher.group(2)), Integer.valueOf(matcher.group(3)) };
 	}
 }

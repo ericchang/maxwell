@@ -1,17 +1,16 @@
 package com.zendesk.maxwell;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.*;
-
 import com.google.code.or.binlog.impl.event.UpdateRowsEvent;
 import com.google.code.or.binlog.impl.event.UpdateRowsEventV2;
-import com.google.code.or.common.glossary.Column;
 import com.google.code.or.common.glossary.Pair;
 import com.google.code.or.common.glossary.Row;
 import com.google.code.or.common.glossary.column.BitColumn;
 import com.zendesk.maxwell.schema.Table;
-import com.zendesk.maxwell.schema.columndef.ColumnDef;
+
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
 
 public class MaxwellUpdateRowsEvent extends MaxwellAbstractRowsEvent {
 	private final UpdateRowsEvent event;
@@ -74,7 +73,7 @@ public class MaxwellUpdateRowsEvent extends MaxwellAbstractRowsEvent {
 	}
 
 	@Override
-	public List<RowMap> jsonMaps() {
+	public List<RowMap> buildRowMaps() {
 		ArrayList<RowMap> list = new ArrayList<>();
 		for (Pair<Row> p : filteredRowsBeforeAndAfter() ) {
 			Row after = p.getAfter();
@@ -83,12 +82,12 @@ public class MaxwellUpdateRowsEvent extends MaxwellAbstractRowsEvent {
 			RowMap rowMap = buildRowMap();
 
 			for ( ColumnWithDefinition cd : new ColumnWithDefinitionList(table, after, event.getUsedColumnsAfter())) {
-				rowMap.putData(cd.definition.getName(), cd.asJSON());
+				rowMap.putData(cd.getName(), cd.getDefinition(), cd.getValue());
 			}
 
 			for ( ColumnWithDefinition cd : new ColumnWithDefinitionList(table, before, event.getUsedColumnsBefore())) {
-				String name = cd.definition.getName();
-				Object beforeValue = cd.asJSON();
+				String name = cd.getName();
+				Object beforeValue = cd.getValue();
 
 				if (!rowMap.hasData(name)) {
 					/*
@@ -96,13 +95,13 @@ public class MaxwellUpdateRowsEvent extends MaxwellAbstractRowsEvent {
 					   we're running in binlog_row_image = MINIMAL.  In this case, the BEFORE image acts
 					   as a sort of WHERE clause to update rows with the new values (present in the AFTER image).
 
-					   In order to reconstruct as much of the row as posssible, here we fill in
+					   In order to reconstruct as much of the row as possible, here we fill in
 					   missing data in the rowMap with values from the BEFORE image
 					 */
-					rowMap.putData(name, beforeValue);
+					rowMap.putData(name, cd.getDefinition(), beforeValue);
 				} else {
-					if (!Objects.equals(rowMap.getData(name), beforeValue)) {
-						rowMap.putOldData(name, beforeValue);
+					if ( !rowMap.containsValue(name, beforeValue) ) {
+						rowMap.putOldData(name, cd.getDefinition(), beforeValue);
 					}
 				}
 			}
@@ -114,6 +113,6 @@ public class MaxwellUpdateRowsEvent extends MaxwellAbstractRowsEvent {
 
 	@Override
 	protected BitColumn getUsedColumns() {
-		return event.getUsedColumnsAfter(); // not actually used, since we override jsonMaps()
+		return event.getUsedColumnsAfter(); // not actually used, since we override buildRowMaps()
 	}
 }

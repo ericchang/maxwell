@@ -1,0 +1,13 @@
+CREATE DATABASE `test_db`
+CREATE TABLE `test_db`.`test_alike` ( id int(11) auto_increment not null primary key, flt float )
+CREATE TABLE `test_db`.`test_alike2` LIKE `test_db`.`test_alike`
+
+insert into test_db.test_alike2 set flt = 1.5;
+
+->  {"database": {"string": "test_db"}, "table": {"string": "test_alike2"}, "type": {"string": "insert"},
+->   "data": {"maxwell.test.columns": {"id": {"long": 1}, "flt": {"double": 1.5}}},
+->   "old": null,
+->   "schema": "{{{schema_test_alike2}}}"
+->  }
+
+

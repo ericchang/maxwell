@@ -1,0 +1,20 @@
+create database gis_db;
+use gis_db;
+create table test_gis(id int(10) unsigned not null auto_increment primary key, g GEOMETRY NULL);
+
+insert into test_gis set g=POINT(3, 2);
+
+->  {"database": {"string": "gis_db"}, "table": {"string": "test_gis"}, "type": {"string": "insert"},
+->   "data": {"maxwell.test.columns": { "id": {"long": 1}, "g": {"string": "POINT (3 2)"}}},
+->   "old": null,
+->   "schema": "{{{schema_test_gis}}}"
+->  }
+
+insert into test_gis set g=GEOMETRYCOLLECTION(POINT(1, 1),LINESTRING(POINT(0,1), POINT(1,2), POINT(2,3), POINT(3,4)));
+
+->  {"database": {"string": "gis_db"}, "table": {"string": "test_gis"}, "type": {"string": "insert"},
+->   "data": {"maxwell.test.columns": { "id": {"long": 2}, "g": {"string": "GEOMETRYCOLLECTION (POINT (1 1), LINESTRING (0 1, 1 2, 2 3, 3 4))"}}},
+->   "old": null,
+->   "schema": "{{{schema_test_gis}}}"
+->  }
+

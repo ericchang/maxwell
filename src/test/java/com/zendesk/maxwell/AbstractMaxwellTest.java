@@ -10,7 +10,10 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
+
+import com.zendesk.maxwell.producer.AbstractProducer.Format;
 
 import com.zendesk.maxwell.bootstrap.AsynchronousBootstrapper;
 import com.zendesk.maxwell.bootstrap.SynchronousBootstrapper;
@@ -146,7 +149,7 @@ public class AbstractMaxwellTest {
 
 		final ArrayList<RowMap> list = new ArrayList<>();
 
-		AbstractProducer producer = new AbstractProducer(context) {
+		AbstractProducer producer = new AbstractProducer(context, EnumSet.allOf(Format.class), Format.JSON) {
 			@Override
 			public void push(RowMap r) {
 				list.add(r);

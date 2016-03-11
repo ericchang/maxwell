@@ -1,19 +1,18 @@
 package com.zendesk.maxwell.schema.ddl;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-
+import com.zendesk.maxwell.schema.columndef.ColumnDef;
+import com.zendesk.maxwell.schema.ddl.mysqlParser.*;
 import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.TokenStreamRewriter;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.ErrorNode;
-
-import com.zendesk.maxwell.schema.columndef.ColumnDef;
-import com.zendesk.maxwell.schema.ddl.mysqlParser.*;
-
+import org.antlr.v4.runtime.tree.TerminalNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 public class MysqlParserListener extends mysqlBaseListener {
     final Logger LOGGER = LoggerFactory.getLogger(MysqlParserListener.class);
@@ -311,6 +310,8 @@ public class MysqlParserListener extends mysqlBaseListener {
 		Long columnLength = null;
 		Boolean longStringFlag = false;
 		String colType = null, colEncoding = null;
+		Integer precision = null;
+		Integer scale = null;
 		String[] enumValues = null;
 		List<Column_optionsContext> colOptions = null;
 		boolean signed = true;
@@ -328,6 +329,15 @@ public class MysqlParserListener extends mysqlBaseListener {
 			colType = dctx.signed_type().col_type.getText();
 			signed = isSigned(dctx.signed_type().int_flags());
 			colOptions = dctx.signed_type().column_options();
+
+			Decimal_lengthContext decimalLength = dctx.signed_type().decimal_length();
+			if ( decimalLength != null ) {
+				List<TerminalNode> integers = decimalLength.INTEGER_LITERAL();
+				precision = Integer.valueOf(integers.get(0).getText());
+				if ( integers.size() >= 2 ) {
+					scale = Integer.valueOf(integers.get(1).getText());
+				}
+			}
 		} else if ( dctx.string_type() != null ) {
 			colType = dctx.string_type().col_type.getText();
 			colEncoding = getEncoding(dctx.string_type().string_column_options());
@@ -363,6 +373,8 @@ public class MysqlParserListener extends mysqlBaseListener {
 					                   name,
 					                   colEncoding,
 					                   colType.toLowerCase(),
+									   precision,
+									   scale,
 					                   -1,
 					                   signed,
 					                   enumValues);

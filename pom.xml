@@ -4,7 +4,7 @@
 
   <groupId>com.zendesk</groupId>
   <artifactId>maxwell</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.0-avro</version>
   <packaging>jar</packaging>
 
   <name>maxwell</name>
@@ -97,6 +97,22 @@
       <artifactId>jts</artifactId>
       <version>1.13</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.avro</groupId>
+      <artifactId>avro</artifactId>
+      <version>1.8.0</version>
+    </dependency>
+    <dependency>
+      <groupId>joda-time</groupId>
+      <artifactId>joda-time</artifactId>
+      <version>2.9.2</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.spullara.mustache.java</groupId>
+      <artifactId>compiler</artifactId>
+      <version>0.8.18</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -138,6 +154,7 @@
             <descriptor>src/main/assembly/assembly.xml</descriptor>
           </descriptors>
           <appendAssemblyId>false</appendAssemblyId>
+          <tarLongFileMode>posix</tarLongFileMode>
         </configuration>
         <executions>
           <execution>

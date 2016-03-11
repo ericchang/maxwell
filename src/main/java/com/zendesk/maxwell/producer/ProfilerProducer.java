@@ -5,14 +5,15 @@ import com.zendesk.maxwell.RowMap;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.EnumSet;
 
 public class ProfilerProducer extends AbstractProducer {
 	private long count;
 	private long startTime;
 	private FileOutputStream nullOutputStream;
 
-	public ProfilerProducer(MaxwellContext context) {
-		super(context);
+	public ProfilerProducer(MaxwellContext context, Format format) {
+		super(context, EnumSet.allOf(Format.class), format);
 		this.count = 0;
 		this.startTime = 0;
 	}
@@ -27,7 +28,7 @@ public class ProfilerProducer extends AbstractProducer {
 			this.startTime = System.currentTimeMillis();
 
 
-		nullOutputStream.write(r.toJSON().getBytes());
+		nullOutputStream.write(serialize(r, null));
 
 		this.count++;
 		if ( this.count % 10000 == 0 ) {

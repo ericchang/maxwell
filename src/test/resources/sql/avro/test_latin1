@@ -1,0 +1,11 @@
+CREATE DATABASE `test_latin1` default charset 'latin1'
+create table `test_latin1`.`latin1` ( textcol text )
+use test_latin1
+
+insert into `latin1` set `textcol` = 'áááááááá';
+
+->  {"database": {"string": "test_latin1"}, "table": {"string": "latin1"}, "type": {"string": "insert"},
+->   "data": {"maxwell.test.columns": { "textcol": {"string": "áááááááá"}}},
+->   "old": null,
+->   "schema": "{{{schema_test_latin1}}}"
+->  }

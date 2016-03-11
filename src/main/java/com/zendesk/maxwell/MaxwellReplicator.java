@@ -213,7 +213,7 @@ public class MaxwellReplicator extends RunLoopProcess {
 					}
 
 					if ( event.matchesFilter() ) {
-						for ( RowMap r : event.jsonMaps() )
+						for ( RowMap r : event.buildRowMaps() )
 							buffer.add(r);
 					}
 

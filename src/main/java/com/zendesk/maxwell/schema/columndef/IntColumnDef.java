@@ -1,15 +1,25 @@
 package com.zendesk.maxwell.schema.columndef;
 
 import com.google.code.or.common.util.MySQLConstants;
+import org.apache.avro.JsonProperties;
+import org.apache.avro.Schema;
+import org.apache.avro.SchemaBuilder;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class IntColumnDef extends ColumnDef {
 	private final int bits;
+	private final Schema.Field fieldSchema;
 
 	public IntColumnDef(String tableName, String name, String type, int pos, boolean signed) {
 		super(tableName, name, type, pos);
 		this.signed = signed;
 		this.bits = bitsFromType(type);
+
+		Schema union = SchemaBuilder.unionOf().nullType().and().longType().endUnion();
+		fieldSchema = new Schema.Field(avroSanitize(name), union, null, JsonProperties.NULL_VALUE);
 	}
 
 
@@ -45,7 +55,7 @@ public class IntColumnDef extends ColumnDef {
 	}
 
 	@Override
-	public Object asJSON(Object value) {
+	public Object jsonValue(Object value) {
 		return toLong(value);
 	}
 
@@ -86,4 +96,13 @@ public class IntColumnDef extends ColumnDef {
 		return signed;
 	}
 
+	@Override
+	public Schema.Field buildAvroField() {
+		return fieldSchema;
+	}
+
+	@Override
+	public Object avroValue(Object value) {
+		return toLong(value);
+	}
 }

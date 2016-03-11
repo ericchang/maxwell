@@ -1,6 +1,5 @@
 package com.zendesk.maxwell;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -166,16 +165,18 @@ public class MaxwellContext {
 	}
 
 	public AbstractProducer getProducer() throws IOException {
+		AbstractProducer.Format format = AbstractProducer.Format.findByCode(this.config.format);
+
 		switch ( this.config.producerType ) {
 		case "file":
-			return new FileProducer(this, this.config.outputFile);
+			return new FileProducer(this, this.config.outputFile, format);
 		case "kafka":
-			return new MaxwellKafkaProducer(this, this.config.getKafkaProperties(), this.config.kafkaTopic);
+			return new MaxwellKafkaProducer(this, this.config.getKafkaProperties(), this.config.kafkaTopic, format);
 		case "profiler":
-			return new ProfilerProducer(this);
+			return new ProfilerProducer(this, format);
 		case "stdout":
 		default:
-			return new StdoutProducer(this);
+			return new StdoutProducer(this, format);
 		}
 	}
 

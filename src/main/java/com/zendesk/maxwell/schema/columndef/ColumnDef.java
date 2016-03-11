@@ -1,10 +1,20 @@
 package com.zendesk.maxwell.schema.columndef;
 
+import org.apache.avro.Schema;
+
+import java.util.regex.Pattern;
+
 public abstract class ColumnDef {
+	private static final Pattern avro_name_invalid = Pattern.compile("([^a-zA-Z0-9_]+)");
+	private static final Pattern avro_name_valid = Pattern.compile("^[a-zA-Z_].*$");
+	private static final String avro_replace_str = "_";
+
 	protected final String tableName;
 	protected final String name;
 	protected final String type;
 	protected String[] enumValues;
+	protected Integer precision;
+	protected Integer scale;
 	private int pos;
 	public boolean signed;
 	public String encoding;
@@ -20,15 +30,44 @@ public abstract class ColumnDef {
 	public abstract boolean matchesMysqlType(int type);
 	public abstract String toSQL(Object value);
 
-	public Object asJSON(Object value) {
+	public final Schema.Field getAvroField() {
+		Schema.Field field = buildAvroField();
+		return new Schema.Field(field.name(), field.schema(), field.doc(), field.defaultVal(), field.order());
+	}
+
+	/**
+	 * @return an {@link org.apache.avro.Schema.Field} which will be copied and returned by
+	 * {@link #getAvroField()}.  This allows a Field to be registered with multiple Schemas.
+     */
+	protected abstract Schema.Field buildAvroField();
+
+	public final Object asAvro(Object value) {
+		if ( value == null ) {
+			return null;
+		} else {
+			return avroValue(value);
+		}
+	}
+
+	protected abstract Object avroValue(Object value);
+
+	public final Object asJSON(Object value) {
+		if ( value == null ) {
+			return null;
+		} else {
+			return jsonValue(value);
+		}
+	}
+
+	protected Object jsonValue(Object value) {
 		return value;
 	}
 
 	public ColumnDef copy() {
-		return build(this.tableName, this.name, this.encoding, this.type, this.pos, this.signed, this.enumValues);
+		return build(this.tableName, this.name, this.encoding, this.type, this.precision, this.scale, this.pos, this.signed, this.enumValues);
 	}
 
-	public static ColumnDef build(String tableName, String name, String encoding, String type, int pos, boolean signed, String enumValues[]) {
+	public static ColumnDef build(String tableName, String name, String encoding, String type, Integer precision, Integer scale, int pos, boolean signed, String enumValues[]) {
 		switch(type) {
 		case "tinyint":
 		case "smallint":
@@ -64,7 +103,7 @@ public abstract class ColumnDef {
 		case "double":
 			return new FloatColumnDef(tableName, name, type, pos);
 		case "decimal":
-			return new DecimalColumnDef(tableName, name, type, pos);
+			return new DecimalColumnDef(tableName, name, type, precision, scale, pos);
 		case "date":
 			return new DateColumnDef(tableName, name, type, pos);
 		case "datetime":
@@ -178,6 +217,14 @@ public abstract class ColumnDef {
 		return type;
 	}
 
+	public Integer getPrecision() {
+		return precision;
+	}
+
+	public Integer getScale() {
+		return scale;
+	}
+
 	public int getPos() {
 		return pos;
 	}
@@ -198,4 +245,16 @@ public abstract class ColumnDef {
 		return enumValues;
 	}
 
+	/**
+	 * Replaces any sequence of non-alpha, non-numeric, and non-underscore characters with an
+	 * underscore.
+	 */
+	protected String avroSanitize(String name) {
+		String sanitized = avro_name_invalid.matcher(name).replaceAll(avro_replace_str);
+		if ( !avro_name_valid.matcher(sanitized).matches() ) {
+			return "_" + sanitized;
+		} else {
+			return sanitized;
+		}
+	}
 }

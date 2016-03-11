@@ -1,9 +1,5 @@
 package com.zendesk.maxwell;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.*;
-
 import com.google.code.or.binlog.BinlogEventV4Header;
 import com.google.code.or.binlog.impl.event.AbstractRowEvent;
 import com.google.code.or.common.glossary.Column;
@@ -15,10 +11,15 @@ import com.zendesk.maxwell.schema.columndef.ColumnDef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+
 // the main wrapper for a raw (AbstractRowEvent) binlog event.
 // decorates the event with metadata info from Table,
 // filters rows using the passed in MaxwellFilter,
-// and ultimately outputs arrays of json objects representing each row.
+// and ultimately outputs arrays of objects representing each row.
 
 public abstract class MaxwellAbstractRowsEvent extends AbstractRowEvent {
 	static final Logger LOGGER = LoggerFactory.getLogger(MaxwellAbstractRowsEvent.class);
@@ -177,7 +178,7 @@ public abstract class MaxwellAbstractRowsEvent extends AbstractRowEvent {
 	}
 
 
-	public List<RowMap> jsonMaps() {
+	public List<RowMap> buildRowMaps() {
 		ArrayList<RowMap> list = new ArrayList<>();
 
 		for ( Iterator<Row> ri = filteredRows().iterator() ; ri.hasNext(); ) {
@@ -186,7 +187,7 @@ public abstract class MaxwellAbstractRowsEvent extends AbstractRowEvent {
 			RowMap rowMap = buildRowMap();
 
 			for ( ColumnWithDefinition cd : new ColumnWithDefinitionList(table, r, getUsedColumns()) )
-				rowMap.putData(cd.definition.getName(), cd.asJSON());
+				rowMap.putData(cd.getName(), cd.getDefinition(), cd.getValue());
 
 			list.add(rowMap);
 		}

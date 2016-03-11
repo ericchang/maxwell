@@ -1,0 +1,16 @@
+create database timedb
+use timedb
+
+set global time_zone = '-0:00';
+
+CREATE TABLE tt ( t time(6), dt datetime(3), ts timestamp(4) NULL );
+
+insert into tt set t = '12:23:33.222', dt = '2012-01-01 22:32:34.222';
+
+# TODO: support fractional times properly!
+-> {"schema": "{{{schema_tt}}}",
+->  "database": {"string": "timedb"}, "table": {"string": "tt"}, "type": {"string": "insert"},
+->  "data": {"maxwell.test.columns": {"t": {"int": 44613000}, "dt": {"long": 1325457154000}, "ts": null}},
+->  "old":  null
+-> }
+
